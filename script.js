@@ -1,21 +1,21 @@
 const GEMINI_API_KEY = 'AIzaSyB4jJjZ3U89Aohq1tsuPhCA61tfE_eBDps';
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}`;
 
 
 const GEMINI_PROMPT_SCAFFOLDING = `Analyze the following response (in text-form) to the question "Describe yourself, or a recent experience in your life, in at least 200 words" submitted by the user and provide your estimated Big Five personality scores.
 
 Output ONLY a JSON object with this exact format: 
 {
-    "intellect/openness": {"score": 0.0, "confidence": 0.0, "reasoning": string},
+    "openness/intellect": {"score": 0.0, "confidence": 0.0, "reasoning": string},
     "conscientiousness": {"score": 0.0, "confidence": 0.0, "reasoning": string},
     "extraversion": {"score": 0.0, "confidence": 0.0, "reasoning": string},
     "agreeableness": {"score": 0.0, "confidence": 0.0, "reasoning": string},
-    "neuroticism": {"score": 0.0, "confidence": 0.0, "reasoning": string}
+    "emotional stability": {"score": 0.0, "confidence": 0.0, "reasoning": string}
 }
 Do not output any other text.
 
 Additional rules:
-(1) If the user has entered less than 200 words, output a score of "-1.0" for each dimension, and you then must output "0.0" for confidence and "N/A" for reasoning, since this would be too little text to analyze.
+(1) If the user has entered less than 150 words, output a score of "-1.0" for each dimension, and you then must output "0.0" for confidence and "N/A" for reasoning, since this would be too little text to analyze.
 
 (2) If the user's response is off-topic (in other words, it's about a topic completely unrelated to them as person, say, about their friend or about the newest brand of coffee), also output a score of "-1.0" for each dimension, and you then must output "0.0" for confidence and "N/A" for reasoning, since then this text is not analyzable in terms of personality. 
 
@@ -72,6 +72,11 @@ const form = document.getElementById("big-5-form");
 const itemsArray = document.getElementById("big-5-items");
 const resultsDisplay = document.getElementById("big-5-results");
 const resetButton = document.getElementById("reset-button");
+
+const textInputForm = document.getElementById("input-form");
+const userResponseText = document.getElementById("user-response-text");
+const textInputResultsDisplay = document.getElementById("input-results");
+const textInputClearButton = document.getElementById("input-reset-button");
 
 function renderItems() {
   itemsArray.innerHTML = ITEMS.map((item) => {
@@ -172,27 +177,156 @@ resultsDisplay.innerHTML = DIMENSIONS.map(d => {
 }
 
 
+async function analyzePersonality(userResponse) {
+    try {
+        const geminiResponse = await fetch(GEMINI_API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            contents: [{
+            parts: [{
+                text: `${GEMINI_PROMPT_SCAFFOLDING}\n\n${userResponse}`
+            }]
+            }]
+        })
+        });
+    if (!geminiResponse.ok) {
+        throw new Error(`Gemini API error due to ${geminiResponse.status}`);
+    }
+    const data = await geminiResponse.json();
+    const geminiOutput = data.candidates[0].content.parts[0].text;
 
+    let cleanedOutput = geminiOutput.replace(/```json|```/g, '').trim();
+    console.log("gemini output: " + cleanedOutput);
+    let personalityData;
+    try {
+        personalityData = JSON.parse(cleanedOutput);
+    } 
+    catch (parseError) {
+        console.error('Failed to parse AI output as JSON object');
+        return {
+            isValid: false,
+            data: null,
+            error: 'Failed to parse AI output as JSON object'
+        };
+    }
+    //check if the user's personality response is valid (i.e. on-topic and long enough)
+    const valid = personalityData["agreeableness"] && personalityData["agreeableness"].score !== -1.0;
+
+    if (!valid) {
+        console.error("not valid");
+        return {
+            isValid: false,
+            data: personalityData,
+            error: "Sorry, but your response was too short (< 200 words) or off-topic."
+        };
+    }
+    else {
+        return {
+            isValid: true,
+            data: personalityData
+        };
+    }
+
+    } catch (error) {
+        console.error('Error analyzing personality due to ', error);
+        return {
+            isValid: false,
+            data: null,
+            error: error.message
+        };
+    }
+}
+
+function displayBig5JSON(big5json) {
+    if (!big5json.isValid) {
+        textInputResultsDisplay.innerHTML = big5json.error;
+        return;
+    }
+    else {
+        const data = big5json.data;
+        textInputResultsDisplay.innerHTML = `
+            <h3>Your personality analysis results (powered by Gemini)</h3>
+            ${Object.entries(data).map(([dimension, info]) => `
+                <div class="big-5-dimension-result">
+                    <strong>Your ${dimension}:</strong> ${info.score} %${getComment(info.score)}
+                    (Confidence: ${info.confidence}%)<br>
+                    <i>Reasoning: ${info.reasoning}</i>
+                </div>
+            `).join('')}
+        `;
+    }
+}
+
+function getComment(score) //helper function 
+{ 
+    comment = "";
+    if (score >= 90) 
+        comment = " (Very High)";
+    
+    else if (score >= 75 && score < 90) 
+        comment = " (High)";
+
+    else if (score >= 60 && score < 75) 
+        comment = " (Somewhat High)";
+    
+    else if (score > 40 && score < 60) 
+        comment = " (Neutral)";
+    
+    else if (score > 25 && score <= 40) 
+        comment = " (Somewhat Low)";
+    
+    else if (score > 10 && score <= 25) 
+        comment = " (Low)";
+    
+    else if (score >=0 && score <= 10) 
+        comment = " (Very Low)";
+
+    return comment;
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   renderItems();
 
+  //testGeminiAPI();
+
   form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    out = computeScores(new FormData(form));
-    resultsDisplay.hidden = false;
-    if (out.error) {
-        resultsDisplay.innerHTML = "Error Submitting Form";
-    }
-    displayScores(out.scaledScores);
+        event.preventDefault();
+        out = computeScores(new FormData(form));
+        resultsDisplay.hidden = false;
+        if (out.error) {
+            resultsDisplay.innerHTML = "Error Submitting Form. Please make sure all questions are answered.";
+        }
+        displayScores(out.scaledScores);
   });
 
   resetButton.addEventListener("click", () => {
-    resultsDisplay.hidden = true;
-    resultsDisplay.innerHTML = "";
-    form.reset();
+        resultsDisplay.hidden = true;
+        resultsDisplay.innerHTML = "";
+        form.reset();
+  });
+
+  textInputForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        textInputResultsDisplay.hidden = false;
+        textInputResultsDisplay.innerHTML = "Awaiting Response from Gemini API... Hang tight!";
+        output = await analyzePersonality(userResponseText.value);
+        if (output.error) {
+            textInputResultsDisplay.innerHTML = error.message;
+        }
+        displayBig5JSON(output);
+
+  })
+
+  textInputClearButton.addEventListener("click", () => {
+    textInputResultsDisplay.hidden = true;
+    textInputResultsDisplay.innerHTML = "";
+    textInputForm.reset();
   });
 
   //add more event listeners for the text input
 });
+
 
