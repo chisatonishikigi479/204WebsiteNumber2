@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Big 5 Info Site</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+   
+
+<header>
+    <nav aria-label="Primary">
+    <ul class="nav">
+    <li><a href="#input-test">Analyze Your Personality from Input Text</a></li>
+    <li><a href="#big-5-test">Test Yourself!</a></li>
+    </ul>
+</nav>
+</header>
+
+
+<section id="input-test">
+    <h2>Analyze Your Personality from Text Input</h2>
+    <p>Describe yourself, or a recent experience in your life, in at least 200 words. <b>IMPORTANT: Be honest, and stay on topic.</b></p>
+    <form id="input-form" novalidate>
+    <textarea id="userText" style="width: 800px; height: 200px;" placeholder="I see myself as generally a friendly and outgoing person. My hobbies include walking my dog at the park, volunteering in community service, and reading some lighthearted romance novels. I really love when my buddy Eric throws a simple yet punchy pun that lands just right. Eric, if you're reading this, you never fail to make me laugh lol :D "></textarea>
+    <div class="actions">
+        <button type="submit" class="btn" id="input-analyze-button">Analyze my personality using Gemini AI</button>
+        <button type="reset" class="btn btn-ghost" id="input-reset-button">Clear form</button>
+    </div>
+    </form>
+
+    <div id="input-results" aria-live="polite" hidden>
+        <h3>Your Big 5 Results: </h3>
+    </div>
+
+
+</section>
+
+<section id="big-5-test">
+    <h2>Cursory Big 5 test (25 questions)</h2>
+    <p>Rate how accurately each statement describes you. <b>IMPORTANT: Answer honestly. This is an objective personality screening tool, not a Buzzfeed quiz meant to flatter. On the other hand, this short test is just a demonstration that does <i>NOT</i> replace a professional personality evaluation by a licensed psychologist. </b></p>
+    <form id="big-5-form" novalidate>
+    <ol id="big-5-items" class="items"></ol>
+
+    <div class="actions">
+        <button type="submit" class="btn" id="submit-button">Score my test!</button>
+        <button type="reset" class="btn btn-ghost" id="reset-button">Reset answers</button>
+    </div>
+    </form>
+
+
+    <div id="big-5-results" class="results" aria-live="polite" hidden>
+    <h3>Your Big 5 Scores: </h3>
+    </div>
+</section>
+
+
+
+<script src="script.js" defer></script>
+</body>
+</html>
