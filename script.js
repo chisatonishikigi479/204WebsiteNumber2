@@ -314,7 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
         textInputResultsDisplay.innerHTML = "Awaiting Response from Gemini API... Hang tight!";
         output = await analyzePersonality(userResponseText.value);
         if (output.error) {
-            textInputResultsDisplay.innerHTML = error.message;
+            textInputResultsDisplay.innerHTML = output.error;
         }
         displayBig5JSON(output);
 
