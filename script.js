@@ -300,6 +300,11 @@ async function analyzeCharacterPersonality(characterInput) /* this is a JSON obj
     const geminiOutput = data.candidates[0].content.parts[0].text;
 
     let cleanedOutput = geminiOutput.replace(/```json|```/g, '').trim();
+    if (!cleanedOutput.endsWith('}')) {
+        cleanedOutput += '}';
+    }
+    
+
     console.log("gemini output: " + cleanedOutput);
     let personalityData;
     try {
@@ -372,7 +377,7 @@ function displayCharacterBig5JSON(big5json) {
             <h3>${characterNameField.value}'s personality analysis results (powered by Gemini)</h3>
             ${Object.entries(data).map(([dimension, info]) => `
                 <div class="big-5-dimension-result">
-                    <strong>Your ${dimension}:</strong> ${info.score} %${getComment(info.score)}
+                    <strong>${dimension}:</strong> ${info.score} %${getComment(info.score)}
                     (Confidence: ${info.confidence}%)<br>
                     <i>Reasoning: ${info.reasoning}</i>
                 </div>
