@@ -13,6 +13,8 @@ Output ONLY a JSON object with this exact format:
     "agreeableness": {"score": 0.0, "confidence": 0.0, "reasoning": string},
     "emotional stability": {"score": 0.0, "confidence": 0.0, "reasoning": string}
 }
+Please please make sure the JSON object is formatted correctly (including matching brackets), and don't add any extraneous spaces either.
+This is to ensure parsing your JSON output is successful. 
 Do NOT output any other text.
 
 Additional rules:
