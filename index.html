@@ -12,12 +12,46 @@
 <header>
     <nav aria-label="Primary">
     <ul class="nav">
+    <li><a href="#character-analysis">Analyze any Character's Personality Traits</a></li>
     <li><a href="#input-test">Analyze Your Personality from Input Text</a></li>
     <li><a href="#big-5-test">Test Yourself!</a></li>
     </ul>
 </nav>
 </header>
 
+<section id="character-analysis">
+    <h2>Analyze a fictional character's personality traits!</h2>
+    <p>Wonder what the Big 5 personality traits of your favorite book, movie, TV show, or anime character is? Drop their name and source material here and click "analyze"!</p> 
+    <!-- I could use a character API from myanimelist or some other database online, but I'm lazy. Also, I already have Gemini API usage so I'm probably good here already.-->
+    <!-- ^^ probably kinda overkill lol, am just gonna use prompt engineering instead ^^ -->
+    <form id="character-analysis-form" novalidate>
+ 
+    <div class="character-analysis-input">
+        <label for="character-name">Name of Character: </label>
+        <input type="text" id="character-name-field" name="character-name" placeholder="Walter White" required>
+    </div>
+    <div class="character-analysis-input">
+        <label for="character-source">Their Source Material: (optional)</label>
+        <input type="text" id="character-source-field" name="character-source" placeholder="Breaking Bad">
+    </div>
+    <div class="character-analysis-input">
+        <label for="character-release-year">Year Released: (optional)</label>
+        <input type="number" id="character-release-year-field" name="character-release-year" placeholder="2008" min="1700" max="2040">
+    </div>
+
+    <div class="actions">
+        <button type="submit" class="btn" id="character-analyze-button">Analyze their personality using gemini AI</button>
+        <button type="reset" class="btn btn-ghost" id="character-reset-button">Clear form</button>
+    </div>
+
+    </form>
+
+
+    <div id="character-analysis-results" aria-live="polite" hidden>
+        <h3><!-- for Gemini API to inject--> </h3>
+    </div>
+
+</section>
 
 <section id="input-test">
     <h2>Analyze Your Personality from Text Input</h2>

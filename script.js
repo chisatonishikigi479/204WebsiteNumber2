@@ -78,6 +78,8 @@ const userResponseText = document.getElementById("user-response-text");
 const textInputResultsDisplay = document.getElementById("input-results");
 const textInputClearButton = document.getElementById("input-reset-button");
 
+
+
 function renderItems() {
   itemsArray.innerHTML = ITEMS.map((item) => {
     const questionName = `Question ${item.id}`;
