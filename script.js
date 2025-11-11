@@ -1,6 +1,33 @@
 const GEMINI_API_KEY = 'AIzaSyB4jJjZ3U89Aohq1tsuPhCA61tfE_eBDps';
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}`;
 
+const GEMINI_CHARACTER_PROMPT_SCAFFOLDING = `The user has submitted three input text fields for an existing fictional character in the form {"character_name": ring, "source_material": string, "release_date": int}. 
+
+Your task and ONLY task is to, based on this input, estimate this fictional character's Big 5/BFAS personality traits based on what you know about the fictional character.
+
+Output ONLY a JSON object with this exact format: 
+{
+    "openness/intellect": {"score": 0.0, "confidence": 0.0, "reasoning": string},
+    "conscientiousness": {"score": 0.0, "confidence": 0.0, "reasoning": string},
+    "extraversion": {"score": 0.0, "confidence": 0.0, "reasoning": string},
+    "agreeableness": {"score": 0.0, "confidence": 0.0, "reasoning": string},
+    "emotional stability": {"score": 0.0, "confidence": 0.0, "reasoning": string}
+}
+Do NOT output any other text.
+
+Additional rules:
+(1) If the character name field is not filled out, then you must output a score of "-1.0" for each Big 5 dimension, and you then must output "0.0" for confidence and "N/A" for reasoning. 
+
+(2) Note that technically only the character name field is required to be filled out, if the character in question is either well known enough or if their name is specific/unique enough. (For instance, "Walter White" is instantly recognizable as being from Breaking Bad without needing to fill out the source material and release year fields.) However, at other times, due to insufficient number of JSON fields filled out, the specific fictional character the user is referring to might be ambiguous (there could be multiple fictional characters satisfying the filled out properties). If you deem it ambiguous, based on the paucity of fields filled out so far, then you must output a score of "-1.0" for each Big 5 dimension, and you then must output "0.0" for confidence and "N/A" for reasoning, because this character is then not analyzeable because you don't even know who they are. 
+
+(3) If the character specified by the user just doesn't exist in any published fictional media (literature/books, movies, TV series, anime, comics) based on your knowledge, then you must output a score of "-1.0" for each Big 5 dimension, and you then must output "0.0" for confidence and "N/A" for reasoning, because this character is then not analyzeable because you don't even know who they are, regardless of whether all three input fields are filled out or not. 
+
+(4) If and only if a score estimate is available for each dimension (i.e. the character specified exists in some published fictional media, AND is unambiguously/uniquely specified), make your estimated scores for each dimension range from 0.0 (lowest) to 100.0 (highest) and output that in the "score" property. Output your relative confidence level (from 0.0 (lowest confidence) to 100.0 (highest confidence) in giving that fictional character that score for each dimension in the "confidence" property of each dimension.
+
+(5) For the reasoning property of each Big 5 trait (the "reasoning" property of the JSON object), make your response directed in third-person perspective (to the character in question, addressing whoever their name is), and cite reasons specific to/catered to the character's personality as portrayed in their corresponding fictional media/source material (i.e. the book/show/movie they're in). Avoid being too harsh or too effusive, and please keep your tone neutral. Keep your reasoning for your assignment of each Big 5 trait around 50 to 75 words. 
+
+Here is the user's input character JSON object to analyze:`;
+
 
 const GEMINI_PROMPT_SCAFFOLDING = `Analyze the following response (in text-form) to the question "Describe yourself, or a recent experience in your life, in at least 200 words" submitted by the user and provide your estimated Big Five personality scores.
 
@@ -250,6 +277,70 @@ async function analyzePersonality(userResponse) {
     }
 }
 
+async function analyzeCharacterPersonality(characterInput) /* this is a JSON object from the form */
+{
+    try {
+        const geminiResponse = await fetch(GEMINI_API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            contents: [{
+            parts: [{
+                text: `${GEMINI_CHARACTER_PROMPT_SCAFFOLDING}\n\n${JSON.stringify(characterInput)}`
+            }]
+            }]
+        })
+        });
+    if (!geminiResponse.ok) {
+        throw new Error(`Gemini API error due to ${geminiResponse.status}`);
+    }
+    const data = await geminiResponse.json();
+    const geminiOutput = data.candidates[0].content.parts[0].text;
+
+    let cleanedOutput = geminiOutput.replace(/```json|```/g, '').trim();
+    console.log("gemini output: " + cleanedOutput);
+    let personalityData;
+    try {
+        personalityData = JSON.parse(cleanedOutput);
+    } 
+    catch (parseError) {
+        console.error('Failed to parse AI output as JSON object');
+        return {
+            isValid: false,
+            data: null,
+            error: 'Failed to parse AI output as JSON object'
+        };
+    }
+    //check if the AI's personality response is valid (i.e. on-topic and long enough)
+    const valid = personalityData["agreeableness"] && personalityData["agreeableness"].score !== -1.0;
+
+    if (!valid) {
+        console.error("not valid");
+        return {
+            isValid: false,
+            data: personalityData,
+            error: "Sorry, but we couldn't find your character. Your input character was either nonsensical/doesn't exist or too ambiguous (try specifying the source material and/or release year!)"
+        };
+    }
+    else {
+        return {
+            isValid: true,
+            data: personalityData
+        };
+    }
+
+    } catch (error) {
+        console.error('Error analyzing character personality due to ', error);
+        return {
+            isValid: false,
+            data: null,
+            error: error.message
+        };
+    }
+}
+
 function displayBig5JSON(big5json) {
     if (!big5json.isValid) {
         textInputResultsDisplay.innerHTML = big5json.error;
@@ -259,6 +350,26 @@ function displayBig5JSON(big5json) {
         const data = big5json.data;
         textInputResultsDisplay.innerHTML = `
             <h3>Your personality analysis results (powered by Gemini)</h3>
+            ${Object.entries(data).map(([dimension, info]) => `
+                <div class="big-5-dimension-result">
+                    <strong>Your ${dimension}:</strong> ${info.score} %${getComment(info.score)}
+                    (Confidence: ${info.confidence}%)<br>
+                    <i>Reasoning: ${info.reasoning}</i>
+                </div>
+            `).join('')}
+        `;
+    }
+}
+
+function displayCharacterBig5JSON(big5json) {
+    if (!big5json.isValid) {
+        textInputResultsDisplay.innerHTML = big5json.error;
+        return;
+    }
+    else {
+        const data = big5json.data;
+        textInputResultsDisplay.innerHTML = `
+            <h3>${characterNameField.value}'s personality analysis results (powered by Gemini)</h3>
             ${Object.entries(data).map(([dimension, info]) => `
                 <div class="big-5-dimension-result">
                     <strong>Your ${dimension}:</strong> ${info.score} %${getComment(info.score)}
@@ -326,14 +437,37 @@ document.addEventListener("DOMContentLoaded", () => {
         if (output.error) {
             textInputResultsDisplay.innerHTML = output.error;
         }
-        displayBig5JSON(output);
+        displayCharacterBig5JSON(output);
 
-  })
+  });
 
   textInputClearButton.addEventListener("click", () => {
     textInputResultsDisplay.hidden = true;
     textInputResultsDisplay.innerHTML = "";
     textInputForm.reset();
+  });
+
+  characterInputForm.addEventListener("submit", async(event) => {
+    event.preventDefault();
+    characterPersonalityResultsDisplay.hidden = false;
+    characterPersonalityResultsDisplay.innerHTML = "Awaiting Response from Gemini API... Hang tight!";
+    const characterInfo = {
+        character_name: characterNameField.value,
+        source_material: characterSourceField.value,
+        release_year: characterReleaseYearField.value
+    }
+    output = await analyzeCharacterPersonality(characterInfo);
+    if (output.error) {
+        characterPersonalityResultsDisplay.innerHTML = output.error;
+    }
+    displayBig5JSON(output);
+
+  });
+
+  characterInputFormResetButton.addEventListener("click", () => {
+    characterPersonalityResultsDisplay.hidden = true;
+    characterPersonalityResultsDisplay.innerHTML = "";
+    characterInputForm.reset();
   });
 
   //add more event listeners for the text input
