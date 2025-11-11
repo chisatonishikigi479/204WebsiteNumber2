@@ -377,7 +377,7 @@ function displayCharacterBig5JSON(big5json) {
             <h3>${characterNameField.value}'s personality analysis results (powered by Gemini)</h3>
             ${Object.entries(data).map(([dimension, info]) => `
                 <div class="big-5-dimension-result">
-                    <strong>${dimension}:</strong> ${info.score} %${getComment(info.score)}
+                    <strong>${characterNameField.value}'s ${dimension}:</strong> ${info.score} %${getComment(info.score)}
                     (Confidence: ${info.confidence}%)<br>
                     <i>Reasoning: ${info.reasoning}</i>
                 </div>
