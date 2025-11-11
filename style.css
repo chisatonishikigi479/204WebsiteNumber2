@@ -61,7 +61,20 @@ header h1 {
 
 #big-5-test #big-5-form #big-5-items li {
     font-size: 15px;
+    border-radius: 7px;
 }
+
+
+#big-5-test #big-5-form #big-5-items .scale {
+display: grid;
+grid-template-columns: repeat(5, 1fr);
+gap: 0.5rem;
+}
+
+#big-5-test #big-5-form #big-5-items label {
+text-align: center;
+}
+
 
 header nav {
     max-width: 1000px; 
