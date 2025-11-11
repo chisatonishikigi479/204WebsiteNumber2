@@ -363,12 +363,12 @@ function displayBig5JSON(big5json) {
 
 function displayCharacterBig5JSON(big5json) {
     if (!big5json.isValid) {
-        textInputResultsDisplay.innerHTML = big5json.error;
+        characterPersonalityResultsDisplay.innerHTML = big5json.error;
         return;
     }
     else {
         const data = big5json.data;
-        textInputResultsDisplay.innerHTML = `
+        characterPersonalityResultsDisplay.innerHTML = `
             <h3>${characterNameField.value}'s personality analysis results (powered by Gemini)</h3>
             ${Object.entries(data).map(([dimension, info]) => `
                 <div class="big-5-dimension-result">
@@ -437,7 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (output.error) {
             textInputResultsDisplay.innerHTML = output.error;
         }
-        displayCharacterBig5JSON(output);
+        displayBig5JSON(output);
 
   });
 
@@ -460,7 +460,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (output.error) {
         characterPersonalityResultsDisplay.innerHTML = output.error;
     }
-    displayBig5JSON(output);
+    displayCharacterBig5JSON(output);
 
   });
 
