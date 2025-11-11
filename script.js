@@ -78,6 +78,14 @@ const userResponseText = document.getElementById("user-response-text");
 const textInputResultsDisplay = document.getElementById("input-results");
 const textInputClearButton = document.getElementById("input-reset-button");
 
+const characterInputForm = document.getElementById("character-analysis-form");
+const characterNameField = document.getElementById("character-name-field");
+const characterSourceField = document.getElementById("character-source-field");
+const characterReleaseYearField = document.getElementById("character-release-year-field");
+const characterPersonalityResultsDisplay = document.getElementById("character-analysis-results");
+const characterInputFormSubmitButton = document.getElementById("character-analyze-button");
+const characterInputFormResetButton = document.getElementById("character-reset-button");
+
 
 
 function renderItems() {
